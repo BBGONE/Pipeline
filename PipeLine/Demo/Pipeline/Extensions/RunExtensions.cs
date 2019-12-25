@@ -4,7 +4,8 @@ namespace Pipeline.Extensions
 {
     public static class RunExtensions
     {
-        public static void Run(this ApplicationBuilder app, RequestDelegate handler)
+        public static void Run<TContext>(this ApplicationBuilder<TContext> app, RequestDelegate<TContext> handler)
+            where TContext : IRequestContext
         {
             if (app == null)
             {

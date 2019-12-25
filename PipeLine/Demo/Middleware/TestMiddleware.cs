@@ -12,10 +12,10 @@ namespace DemoPipeline.Middleware
 
     public class TestMiddleware
     {
-        private readonly RequestDelegate _next;
+        private readonly RequestDelegate<RequestContext> _next;
         private readonly MyTestMiddlewareOptions _options;
 
-        public TestMiddleware(RequestDelegate next, MyTestMiddlewareOptions options)
+        public TestMiddleware(RequestDelegate<RequestContext> next, MyTestMiddlewareOptions options)
         {
             _next = next;
             _options = options;

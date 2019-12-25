@@ -3,15 +3,15 @@ using System.Threading.Tasks;
 
 namespace Pipeline.Middleware
 {
-    public interface IMiddleware
+    public interface IMiddleware<TContext>
     {
-        Task InvokeAsync(RequestContext context, RequestDelegate next);
+        Task InvokeAsync(TContext context, RequestDelegate<TContext> next);
     }
 
-    public interface IMiddlewareFactory
+    public interface IMiddlewareFactory<TContext>
     {
-        IMiddleware Create(Type middlewareType);
+        IMiddleware<TContext> Create(Type middlewareType);
 
-        void Release(IMiddleware middleware);
+        void Release(IMiddleware<TContext> middleware);
     }
 }

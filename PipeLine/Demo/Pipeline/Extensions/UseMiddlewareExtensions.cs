@@ -25,7 +25,8 @@ namespace Pipeline.Extensions
         /// <param name="app">The <see cref="IApplicationBuilder"/> instance.</param>
         /// <param name="args">The arguments to pass to the middleware type instance's constructor.</param>
         /// <returns>The <see cref="IApplicationBuilder"/> instance.</returns>
-        public static IApplicationBuilder UseMiddleware<TMiddleware>(this IApplicationBuilder app, params object[] args)
+        public static IApplicationBuilder<TContext> UseMiddleware<TMiddleware, TContext>(this IApplicationBuilder<TContext> app, params object[] args)
+             where TContext : IRequestContext
         {
             return app.UseMiddleware(typeof(TMiddleware), args);
         }
@@ -37,9 +38,10 @@ namespace Pipeline.Extensions
         /// <param name="middleware">The middleware type.</param>
         /// <param name="args">The arguments to pass to the middleware type instance's constructor.</param>
         /// <returns>The <see cref="IApplicationBuilder"/> instance.</returns>
-        public static IApplicationBuilder UseMiddleware(this IApplicationBuilder app, Type middleware, params object[] args)
+        public static IApplicationBuilder<TContext> UseMiddleware<TContext>(this IApplicationBuilder<TContext> app, Type middleware, params object[] args)
+            where TContext : IRequestContext
         {
-            if (typeof(IMiddleware).GetTypeInfo().IsAssignableFrom(middleware.GetTypeInfo()))
+            if (typeof(IMiddleware<TContext>).GetTypeInfo().IsAssignableFrom(middleware.GetTypeInfo()))
             {
                 // IMiddleware doesn't support passing args directly since it's
                 // activated from the container
@@ -52,6 +54,7 @@ namespace Pipeline.Extensions
             }
 
             var applicationServices = app.ApplicationServices;
+
             return app.Use(next =>
             {
                 var methods = middleware.GetMethods(BindingFlags.Instance | BindingFlags.Public);
@@ -88,10 +91,10 @@ namespace Pipeline.Extensions
                 var instance = ActivatorUtilities.CreateInstance(app.ApplicationServices, middleware, ctorArgs);
                 if (parameters.Length == 1)
                 {
-                    return (RequestDelegate)methodInfo.CreateDelegate(typeof(RequestDelegate), instance);
+                    return (RequestDelegate<TContext>)methodInfo.CreateDelegate(typeof(RequestDelegate<TContext>), instance);
                 }
 
-                var factory = Compile<object>(methodInfo, parameters);
+                var factory = Compile<object, TContext>(methodInfo, parameters);
 
                 return context =>
                 {
@@ -106,13 +109,14 @@ namespace Pipeline.Extensions
             });
         }
 
-        private static IApplicationBuilder UseMiddlewareInterface(IApplicationBuilder app, Type middlewareType)
+        private static IApplicationBuilder<TContext> UseMiddlewareInterface<TContext>(IApplicationBuilder<TContext> app, Type middlewareType)
+             where TContext : IRequestContext
         {
             return app.Use(next =>
             {
                 return async context =>
                 {
-                    var middlewareFactory = (IMiddlewareFactory)context.RequestServices.GetService(typeof(IMiddlewareFactory));
+                    var middlewareFactory = (IMiddlewareFactory<TContext>)context.RequestServices.GetService(typeof(IMiddlewareFactory<TContext>));
                     if (middlewareFactory == null)
                     {
                         // No middleware factory
@@ -138,7 +142,8 @@ namespace Pipeline.Extensions
             });
         }
 
-        private static Func<T, RequestContext, IServiceProvider, Task> Compile<T>(MethodInfo methodInfo, ParameterInfo[] parameters)
+        private static Func<T, TContext, IServiceProvider, Task> Compile<T, TContext>(MethodInfo methodInfo, ParameterInfo[] parameters)
+             where TContext : IRequestContext
         {
             // If we call something like
             //
@@ -168,12 +173,12 @@ namespace Pipeline.Extensions
 
             var middleware = typeof(T);
 
-            var httpContextArg = Expression.Parameter(typeof(RequestContext), "httpContext");
+            var contextArg = Expression.Parameter(typeof(TContext), "context");
             var providerArg = Expression.Parameter(typeof(IServiceProvider), "serviceProvider");
             var instanceArg = Expression.Parameter(middleware, "middleware");
 
             var methodArguments = new Expression[parameters.Length];
-            methodArguments[0] = httpContextArg;
+            methodArguments[0] = contextArg;
             for (int i = 1; i < parameters.Length; i++)
             {
                 var parameterType = parameters[i].ParameterType;
@@ -201,7 +206,7 @@ namespace Pipeline.Extensions
 
             var body = Expression.Call(middlewareInstanceArg, methodInfo, methodArguments);
 
-            var lambda = Expression.Lambda<Func<T, RequestContext, IServiceProvider, Task>>(body, instanceArg, httpContextArg, providerArg);
+            var lambda = Expression.Lambda<Func<T, TContext, IServiceProvider, Task>>(body, instanceArg, contextArg, providerArg);
 
             return lambda.Compile();
         }

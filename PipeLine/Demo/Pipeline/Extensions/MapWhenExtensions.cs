@@ -3,18 +3,16 @@ using System;
 
 namespace Pipeline.Extensions
 {
-    using Predicate = Func<RequestContext, bool>;
-
     public static class MapWhenExtensions
     {
-        public class MapWhenOptions
+        public class MapWhenOptions<TContext>
         {
-            private Predicate _predicate;
+            private Predicate<TContext> _predicate;
 
             /// <summary>
             /// The user callback that determines if the branch should be taken.
             /// </summary>
-            public Predicate Predicate
+            public Predicate<TContext> Predicate
             {
                 get
                 {
@@ -34,11 +32,12 @@ namespace Pipeline.Extensions
             /// <summary>
             /// The branch taken for a positive match.
             /// </summary>
-            public RequestDelegate Branch { get; set; }
+            public RequestDelegate<TContext> Branch { get; set; }
         }
 
 
-        public static IApplicationBuilder MapWhen(this IApplicationBuilder app, Predicate predicate, Action<ApplicationBuilder> configuration)
+        public static IApplicationBuilder<TContext> MapWhen<TContext>(this IApplicationBuilder<TContext> app, Predicate<TContext> predicate, Action<ApplicationBuilder<TContext>> configuration)
+            where TContext : IRequestContext
         {
             if (app == null)
             {
@@ -61,13 +60,13 @@ namespace Pipeline.Extensions
             var branch = branchBuilder.Build();
 
             // put middleware in pipeline
-            var options = new MapWhenOptions
+            var options = new MapWhenOptions<TContext>
             {
                 Predicate = predicate,
                 Branch = branch,
             };
 
-            return app.Use(next => new MapWhenMiddleware(next, options).Invoke);
+            return app.Use(next => new MapWhenMiddleware<TContext>(next, options).Invoke);
         }
     }
 }

@@ -5,7 +5,8 @@ namespace Pipeline.Extensions
 {
     public static class UseExtensions
     {
-        public static IApplicationBuilder Use(this IApplicationBuilder app, Func<RequestContext, Func<Task>, Task> middleware)
+        public static IApplicationBuilder<TContext> Use<TContext>(this IApplicationBuilder<TContext> app, Func<TContext, Func<Task>, Task> middleware)
+             where TContext : IRequestContext
         {
             return app.Use(next =>
             {

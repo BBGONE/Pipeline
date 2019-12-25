@@ -8,7 +8,7 @@ namespace DemoPipeline
 {
     public class Configuration
     {
-        public static void Configure(ApplicationBuilder app)
+        public static void Configure(ApplicationBuilder<RequestContext> app)
         {
             app.Use(next =>
             {
@@ -89,7 +89,7 @@ namespace DemoPipeline
                 });
             });
 
-            app.UseMiddleware<TestMiddleware>(new MyTestMiddlewareOptions());
+            app.UseMiddleware<TestMiddleware, RequestContext>(new MyTestMiddlewareOptions());
 
             app.Run(ctx =>
             {

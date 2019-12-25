@@ -4,12 +4,12 @@ using static Pipeline.Extensions.MapWhenExtensions;
 
 namespace Pipeline.Middleware
 {
-    public class MapWhenMiddleware
+    public class MapWhenMiddleware<TContext>
     {
-        private readonly RequestDelegate _next;
-        private readonly MapWhenOptions _options;
+        private readonly RequestDelegate<TContext> _next;
+        private readonly MapWhenOptions<TContext> _options;
 
-        public MapWhenMiddleware(RequestDelegate next, MapWhenOptions options)
+        public MapWhenMiddleware(RequestDelegate<TContext> next, MapWhenOptions<TContext> options)
         {
             if (next == null)
             {
@@ -25,7 +25,7 @@ namespace Pipeline.Middleware
             _options = options;
         }
 
-        public async Task Invoke(RequestContext context)
+        public async Task Invoke(TContext context)
         {
             if (context == null)
             {

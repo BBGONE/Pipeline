@@ -2,8 +2,6 @@
 
 namespace Pipeline.Extensions
 {
-    using Predicate = Func<RequestContext, bool>;
-
     public static class UseWhenExtensions
     {
         /// <summary>
@@ -13,7 +11,8 @@ namespace Pipeline.Extensions
         /// <param name="predicate">Invoked with the request environment to determine if the branch should be taken</param>
         /// <param name="configuration">Configures a branch to take</param>
         /// <returns></returns>
-        public static IApplicationBuilder UseWhen(this IApplicationBuilder app, Predicate predicate, Action<ApplicationBuilder> configuration)
+        public static IApplicationBuilder<TContext> UseWhen<TContext>(this IApplicationBuilder<TContext> app, Predicate<TContext> predicate, Action<ApplicationBuilder<TContext>> configuration)
+            where TContext : IRequestContext
         {
             if (app == null)
             {

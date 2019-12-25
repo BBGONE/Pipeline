@@ -4,7 +4,16 @@ using System.Runtime.ExceptionServices;
 
 namespace Pipeline
 {
-    public class RequestContext
+    public interface IRequestContext
+    {
+        void CaptureException(Exception ex);
+        void AddLogItem(string str);
+        IServiceProvider RequestServices { get; }
+        dynamic Request { get; }
+        dynamic Response { get; }
+    }
+
+    public class RequestContext: IRequestContext
     {
         private ExceptionDispatchInfo _ExceptionInfo;
 

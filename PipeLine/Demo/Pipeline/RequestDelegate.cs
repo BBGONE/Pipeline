@@ -3,12 +3,14 @@ using System.Threading.Tasks;
 
 namespace Pipeline
 {
-    public delegate Task RequestDelegate(RequestContext ctx);
+    public delegate bool Predicate<TContext>(TContext ctx);
 
-    public class MiddlewareComponentNode
+    public delegate Task RequestDelegate<TContext>(TContext ctx);
+
+    public class MiddlewareComponentNode<TContext>
     {
-        public RequestDelegate Next;
-        public RequestDelegate Process;
-        public Func<RequestDelegate, RequestDelegate> Component;
+        public RequestDelegate<TContext> Next;
+        public RequestDelegate<TContext> Process;
+        public Func<RequestDelegate<TContext>, RequestDelegate<TContext>> Component;
     }
 }

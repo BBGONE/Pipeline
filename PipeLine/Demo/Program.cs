@@ -8,13 +8,13 @@ namespace DemoPipeline
     {
         static async Task Main(string[] args)
         {
-            ApplicationBuilder app = new ApplicationBuilder();
+            ApplicationBuilder<RequestContext> app = new ApplicationBuilder<RequestContext>();
 
             Configuration.Configure(app);
 
-            RequestDelegate _pipeline = app.Build();
+            var _pipeline = app.Build();
 
-            Task RunPipeline(RequestDelegate pipeline, int testId, bool isGoUseWhenRoute, bool isGoMapWhenRoute, bool isThrowException, bool isThrowArgumentException = false)
+            Task RunPipeline(RequestDelegate<RequestContext> pipeline, int testId, bool isGoUseWhenRoute, bool isGoMapWhenRoute, bool isThrowException, bool isThrowArgumentException = false)
             {
                 RequestContext context = new RequestContext();
                 context.Request.IsGoUseWhenRoute = isGoUseWhenRoute;

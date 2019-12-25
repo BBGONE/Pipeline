@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 
 namespace Pipeline
 {
-    public class ApplicationBuilder : IApplicationBuilder
+    public class ApplicationBuilder<TContext> : IApplicationBuilder<TContext>
+        where TContext: IRequestContext
     {
         public ApplicationBuilder()
         {
@@ -16,12 +17,12 @@ namespace Pipeline
         // Gets a key/value collection that can be used to share data between middleware.
         public IDictionary<string, object> Properties { get; }
 
-        public ApplicationBuilder New()
+        public ApplicationBuilder<TContext> New()
         {
-            return new ApplicationBuilder();
+            return new ApplicationBuilder<TContext>();
         }
 
-        public RequestDelegate Build()
+        public RequestDelegate<TContext> Build()
         {
             var node = _components.Last;
             while (node != null)
@@ -35,24 +36,24 @@ namespace Pipeline
             return GetCatchError(_components.First.Value.Process);
         }
 
-        protected virtual async Task OnError(Exception ex, RequestContext ctx)
+        protected virtual async Task OnError(Exception ex, TContext ctx)
         {
             ctx.CaptureException(ex);
-            ctx.Response.StatusCode = 500;
             ctx.AddLogItem($"Error: {ex.Message}");
+            ctx.Response.StatusCode = 500;
             await Task.CompletedTask;
         }
 
-        private RequestDelegate GetNextFunc(LinkedListNode<MiddlewareComponentNode> node)
+        private RequestDelegate<TContext> GetNextFunc(LinkedListNode<MiddlewareComponentNode<TContext>> node)
         {
             if (node.Next == null)
             {
                 // no more middleware components left in the list 
                 return ctx =>
                 {
+                    ctx.AddLogItem("Nothing to process the request StatusCode = 404");
                     // consider a 404 status since no other middleware processed the request
                     ctx.Response.StatusCode = 404;
-                    ctx.AddLogItem("Nothing to process the request StatusCode = 404");
                     return Task.CompletedTask;
                 };
             }
@@ -62,9 +63,9 @@ namespace Pipeline
             }
         }
 
-        RequestDelegate GetCatchError(RequestDelegate next)
+        RequestDelegate<TContext> GetCatchError(RequestDelegate<TContext> next)
         {
-            RequestDelegate catchErrorDelegate = async ctx =>
+            RequestDelegate<TContext> catchErrorDelegate = async ctx =>
             {
                 try
                 {
@@ -79,9 +80,9 @@ namespace Pipeline
             return catchErrorDelegate;
         }
 
-        public ApplicationBuilder Use(Func<RequestDelegate, RequestDelegate> component)
+        public ApplicationBuilder<TContext> Use(Func<RequestDelegate<TContext>, RequestDelegate<TContext>> component)
         {
-            var node = new MiddlewareComponentNode
+            var node = new MiddlewareComponentNode<TContext>
             {
                 Component = component
             };
@@ -90,6 +91,6 @@ namespace Pipeline
             return this;
         }
 
-        LinkedList<MiddlewareComponentNode> _components = new LinkedList<MiddlewareComponentNode>();
+        LinkedList<MiddlewareComponentNode<TContext>> _components = new LinkedList<MiddlewareComponentNode<TContext>>();
     }
 }
