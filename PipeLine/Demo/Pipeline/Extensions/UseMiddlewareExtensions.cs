@@ -65,24 +65,24 @@ namespace Pipeline.Extensions
 
                 if (invokeMethods.Length > 1)
                 {
-                    throw new InvalidOperationException("Resources.FormatException_UseMiddleMutlipleInvokes(InvokeMethodName, InvokeAsyncMethodName)");
+                    throw new InvalidOperationException("UseMiddleMutlipleInvokes(InvokeMethodName, InvokeAsyncMethodName)");
                 }
 
                 if (invokeMethods.Length == 0)
                 {
-                    throw new InvalidOperationException("Resources.FormatException_UseMiddlewareNoInvokeMethod(InvokeMethodName, InvokeAsyncMethodName, middleware)");
+                    throw new InvalidOperationException("UseMiddlewareNoInvokeMethod(InvokeMethodName, InvokeAsyncMethodName, middleware)");
                 }
 
                 var methodInfo = invokeMethods[0];
                 if (!typeof(Task).IsAssignableFrom(methodInfo.ReturnType))
                 {
-                    throw new InvalidOperationException("Resources.FormatException_UseMiddlewareNonTaskReturnType(InvokeMethodName, InvokeAsyncMethodName, nameof(Task))");
+                    throw new InvalidOperationException("UseMiddlewareNonTaskReturnType(InvokeMethodName, InvokeAsyncMethodName, nameof(Task))");
                 }
 
                 var parameters = methodInfo.GetParameters();
-                if (parameters.Length == 0 || parameters[0].ParameterType != typeof(RequestContext))
+                if (parameters.Length == 0 || parameters[0].ParameterType != typeof(TContext))
                 {
-                    throw new InvalidOperationException("Resources.FormatException_UseMiddlewareNoParameters(InvokeMethodName, InvokeAsyncMethodName, nameof(HttpContext))");
+                    throw new InvalidOperationException("UseMiddlewareNoParameters(InvokeMethodName, InvokeAsyncMethodName, nameof(HttpContext))");
                 }
 
                 var ctorArgs = new object[args.Length + 1];
@@ -101,7 +101,7 @@ namespace Pipeline.Extensions
                     var serviceProvider = context.RequestServices ?? applicationServices;
                     if (serviceProvider == null)
                     {
-                        throw new InvalidOperationException("Resources.FormatException_UseMiddlewareIServiceProviderNotAvailable(nameof(IServiceProvider))");
+                        throw new InvalidOperationException("UseMiddlewareIServiceProviderNotAvailable(nameof(IServiceProvider))");
                     }
 
                     return factory(instance, context, serviceProvider);
@@ -120,14 +120,14 @@ namespace Pipeline.Extensions
                     if (middlewareFactory == null)
                     {
                         // No middleware factory
-                        throw new InvalidOperationException("Resources.FormatException_UseMiddlewareNoMiddlewareFactory(typeof(IMiddlewareFactory))");
+                        throw new InvalidOperationException("UseMiddlewareNoMiddlewareFactory(typeof(IMiddlewareFactory))");
                     }
 
                     var middleware = middlewareFactory.Create(middlewareType);
                     if (middleware == null)
                     {
                         // The factory returned null, it's a broken implementation
-                        throw new InvalidOperationException("Resources.FormatException_UseMiddlewareUnableToCreateMiddleware(middlewareFactory.GetType(), middlewareType)");
+                        throw new InvalidOperationException("UseMiddlewareUnableToCreateMiddleware(middlewareFactory.GetType(), middlewareType)");
                     }
 
                     try
@@ -184,7 +184,7 @@ namespace Pipeline.Extensions
                 var parameterType = parameters[i].ParameterType;
                 if (parameterType.IsByRef)
                 {
-                    throw new NotSupportedException("Resources.FormatException_InvokeDoesNotSupportRefOrOutParams(InvokeMethodName)");
+                    throw new NotSupportedException("InvokeDoesNotSupportRefOrOutParams(InvokeMethodName)");
                 }
 
                 var parameterTypeExpression = new Expression[]
@@ -216,7 +216,7 @@ namespace Pipeline.Extensions
             var service = sp.GetService(type);
             if (service == null)
             {
-                throw new InvalidOperationException("Resources.FormatException_InvokeMiddlewareNoService(type, middleware)");
+                throw new InvalidOperationException("InvokeMiddlewareNoService(type, middleware)");
             }
 
             return service;
